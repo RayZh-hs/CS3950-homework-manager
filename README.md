@@ -1,12 +1,27 @@
-# Canvas Homework Manager Template
+# CS3950 Homework Manager
 
-This template facilitates automatic discovery, downloading, preambling and submission of homework distributed on canvas. Choose "Use this template" on github to create your own repository, and fill in functions in `.mango/settings.py` to customize behavior for a single course. This indirection is needed because each course may have different conventions for how homeworks are distributed.
+This repository implements a homework manager for CS3950, a course on algorithm design and analysis. It provides a full set of tools to fetch, setup and submit homework assignments from OC Canvas.
 
-After you are done, use your repository as a mango template to initialize a local homework manager, advisably in a dedicated course directory.
+## Quickstart
 
-## Commands
+To use the template, download [Mango](https://github.com/Mango-CLI/Mango) and use it to initialize a course folder:
 
-The entrypoint, implemented in `__main__.py`, is provided centrally as `mango homework`, alias `mango hw`. It has the following subcommands: 
+```
+cd CS3950
+mango @init --template https://github.com/RayZh-hs/CS3950-homework-manager.git
+```
+
+After that, set environment variables either in `.mango/.env` or your shell environment. See `.mango/.env.example` for details. The required variables are:
+
+- `OC_API_KEY`: API key for OC Canvas instance. You can generate one from your account settings page [here](https://oc.sjtu.edu.cn/profile/settings). Make sure to keep this token secret.
+
+Run `mango homework --help` to see usage instructions.
+
+## Usage Guide
+
+This guide is inherited from the original README of the template repository, see [here](https://github.com/RayZh-hs/canvas-homework-manager-template/blob/main/README.md) for the original version.
+
+All `mango homework` commands should be run in or below the root directory of the course folder. It has been aliased to `mango hw` by default.
 
 - `mango homework`
 	- Show usage and available subcommands (`list`, `fetch`, `submit`).
@@ -29,14 +44,3 @@ The entrypoint, implemented in `__main__.py`, is provided centrally as `mango ho
 
 - `mango homework --help`
 	- Show usage and available subcommands.
-
-## Configuration surface
-
-Edit [.mango/settings.py](.mango/settings.py) to customize:
-
-- Course/API settings (`OC_BASE_URL`, `OC_COURSE_ID`, `OC_API_KEY`, etc.)
-- Which assignments count as homeworks (`choose_homework_assignments()`)
-- How query strings match homeworks (`match_homework_query()`)
-- How file links are parsed (`extract_homework_file_api_endpoints()`)
-- Post-fetch setup behavior (`post_fetch_homework()`)
-- Build + submission artifact logic (`build_homework()`, `get_submission_artifacts()`)

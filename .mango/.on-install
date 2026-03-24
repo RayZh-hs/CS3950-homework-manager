@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+source_path=$(dirname "$0")
+target_path="${MANGO_REPO_PATH}/.mango"
+tmp_name=$(echo "$source_path" | md5sum | cut -d' ' -f1)
+
+# Replace target with source
+rm -rf "/tmp/$tmp_name" && mv -f "$source_path" "/tmp/$tmp_name"
+rm -rf "$target_path" && mv -f "/tmp/$tmp_name" "$target_path"

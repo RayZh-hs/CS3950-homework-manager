@@ -7,15 +7,14 @@ General API/client/workflow logic lives in other `.mango/` scripts.
 
 from __future__ import annotations
 
-import base64
 import html
 import re
 import subprocess
+import urllib.error
 import urllib.parse
 from pathlib import Path
 from typing import List
 
-import _agent_config
 import _utility
 
 # -----------------------------------------------------------------------------
@@ -36,81 +35,6 @@ PROMPT_TEMPLATE_PATH = LITERALS_DIR / "prompt.md"
 PREAMBLE_PATH = LITERALS_DIR / "preamble.tex"
 MAIN_TEX_NAME = "main.tex"
 MAIN_PDF_NAME = "main.pdf"
-
-
-def _render_prompt(
-    *,
-    template: str,
-    preamble_path: Path,
-    preamble_content: str,
-    pdf_name: str,
-    pdf_base64: str,
-) -> str:
-    replacements = {
-        "{{ preamble_path }}": preamble_path.resolve().as_posix(),
-        "{{ preamble_content }}": preamble_content,
-        "{{ assignment_pdf_name }}": pdf_name,
-        "{{ assignment_pdf_base64 }}": pdf_base64,
-    }
-    rendered = template
-    for key, value in replacements.items():
-        rendered = rendered.replace(key, value)
-    return rendered
-
-
-def _inject_absolute_preamble(latex: str, preamble_path: Path) -> str:
-    abs_path = preamble_path.resolve().as_posix()
-    preamble_line = f"\\input{{{abs_path}}}"
-
-    latex = re.sub(
-        r"\\input\{[^}]*preamble[^}]*\}",
-        preamble_line,
-        latex,
-        flags=re.IGNORECASE,
-    )
-    latex = re.sub(
-        r"\\usepackage\{[^}]*preamble[^}]*\}",
-        preamble_line,
-        latex,
-        flags=re.IGNORECASE,
-    )
-
-    if preamble_line in latex:
-        return latex
-
-    if "\\begin{document}" in latex:
-        return latex.replace("\\begin{document}", f"{preamble_line}\n\\begin{{document}}", 1)
-
-    return f"{preamble_line}\n{latex}"
-
-
-def _call_homework_agent(prompt: str) -> tuple[str, _agent_config.AgentConfig]:
-    config = _agent_config.resolve_agent_config()
-    payload = {
-        "model": config.model,
-        "input": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": prompt},
-                ],
-            }
-        ],
-    }
-    response = _utility.post_json(
-        config.endpoint,
-        payload,
-        api_key=config.api_key,
-        timeout=config.timeout,
-    )
-    return _utility.extract_agent_text(response), config
-
-
-def _build_main_tex(homework_dir: Path, latex_body: str) -> Path:
-    latex = _inject_absolute_preamble(latex_body, PREAMBLE_PATH)
-    tex_path = homework_dir / MAIN_TEX_NAME
-    tex_path.write_text(latex, encoding="utf-8")
-    return tex_path
 
 
 # -----------------------------------------------------------------------------
@@ -196,23 +120,36 @@ def post_fetch_homework(
         return {"status": "skipped", "reason": "no-pdf"}
 
     pdf_path = pdf_files[0]
-    pdf_bytes = pdf_path.read_bytes()
-    pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
     template = _utility.load_text(PROMPT_TEMPLATE_PATH)
     if not template.strip():
         return {"status": "skipped", "reason": "missing-prompt-template"}
 
     preamble_content = _utility.load_text(PREAMBLE_PATH)
-    prompt = _render_prompt(
+    prompt = _utility.render_homework_prompt(
         template=template,
         preamble_path=PREAMBLE_PATH,
         preamble_content=preamble_content,
         pdf_name=pdf_path.name,
-        pdf_base64=pdf_base64,
+        assignment_material=_utility.format_attached_assignment_pdf_material(),
     )
 
-    agent_text, agent_config = _call_homework_agent(prompt)
+    try:
+        agent_text, agent_config = _utility.request_homework_agent_text(prompt, pdf_path)
+    except urllib.error.HTTPError as exc:
+        if not _utility.should_retry_with_assignment_pdf_text(exc):
+            raise
+        pdf_text = _utility.extract_assignment_pdf_text(pdf_path)
+        if not pdf_text:
+            return {"status": "failed", "reason": "empty-pdf-text"}
+        fallback_prompt = _utility.render_homework_prompt(
+            template=template,
+            preamble_path=PREAMBLE_PATH,
+            preamble_content=preamble_content,
+            pdf_name=pdf_path.name,
+            assignment_material=_utility.format_extracted_assignment_pdf_material(pdf_text),
+        )
+        agent_text, agent_config = _utility.request_homework_agent_text(fallback_prompt)
     if not agent_text:
         return {"status": "failed", "reason": "empty-agent-response"}
 
@@ -220,7 +157,13 @@ def post_fetch_homework(
     if not latex_body:
         return {"status": "failed", "reason": "no-latex-code-block"}
 
-    tex_path = _build_main_tex(homework_dir, latex_body)
+    tex_path = _utility.write_homework_main_tex(
+        homework_dir,
+        latex_body,
+        preamble_path=PREAMBLE_PATH,
+        output_name=MAIN_TEX_NAME,
+        student_name=_utility.get_env("OC_STUDENT_NAME", "").strip(),
+    )
     return {
         "status": "ok",
         "agent_model": agent_config.model,

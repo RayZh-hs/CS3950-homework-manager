@@ -163,6 +163,7 @@ def post_fetch_homework(
         preamble_path=PREAMBLE_PATH,
         output_name=MAIN_TEX_NAME,
         student_name=_utility.get_env("OC_STUDENT_NAME", "").strip(),
+        student_id=_utility.get_env("OC_STUDENT_ID", "").strip(),
     )
     return {
         "status": "ok",

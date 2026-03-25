@@ -173,11 +173,18 @@ def write_homework_main_tex(
     preamble_path: Path,
     output_name: str = "main.tex",
     student_name: str = "",
+    student_id: str = "",
 ) -> Path:
     latex = _inject_absolute_latex_preamble(latex_body, preamble_path)
 
+    author_fields: list[str] = []
     if student_name:
-        author_line = f"\\author{{{student_name}}}"
+        author_fields.append(_escape_latex_text(student_name))
+    if student_id:
+        author_fields.append(f"Student ID: {_escape_latex_text(student_id)}")
+
+    if author_fields:
+        author_line = f"\\author{{{' \\\\\n'.join(author_fields)}}}"
         if re.search(r"\\author\{.*?\}", latex, flags=re.DOTALL):
             latex = re.sub(r"\\author\{.*?\}", author_line, latex, count=1, flags=re.DOTALL)
         elif "\\date" in latex:
@@ -190,6 +197,22 @@ def write_homework_main_tex(
     tex_path = homework_dir / output_name
     tex_path.write_text(latex, encoding="utf-8")
     return tex_path
+
+
+def _escape_latex_text(text: str) -> str:
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(replacements.get(char, char) for char in text)
 
 
 def post_json(

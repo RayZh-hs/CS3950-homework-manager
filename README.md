@@ -14,6 +14,8 @@ mango @init --template https://github.com/RayZh-hs/CS3950-homework-manager.git
 After that, set environment variables either in `.mango/.env` or your shell environment. See `.mango/.env.example` for details. The required variables are:
 
 - `OC_API_KEY`: API key for OC Canvas instance. You can generate one from your account settings page [here](https://oc.sjtu.edu.cn/profile/settings). Make sure to keep this token secret.
+- `OC_STUDENT_NAME`: optional name injected into generated `main.tex` title metadata.
+- `OC_STUDENT_ID`: optional student ID injected into generated `main.tex` title metadata.
 
 Run `mango homework --help` to see usage instructions.
 

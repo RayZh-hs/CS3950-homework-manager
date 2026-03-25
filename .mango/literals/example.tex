@@ -2,15 +2,60 @@
 
 \begin{document}
 
-\title{\course{} Homework Answer Sheet}
-\author{Student Name \\ Student ID: 123456789}
+\title{Algorithm Design and Analysis (Spring 2026)\\Homework Answer Sheet}
+\author{Student Name \\
+Student ID: \underline{\hspace{3cm}}}
 \date{\today}
 \maketitle
 
-\problem{1} Short summary of the goal and key tasks.
+\problem{1}
+Prove the stated generalization of the master theorem for recurrences of the form
+\[
+  T(n) = aT(n/b) + n^d \log^w n.
+\]
+\begin{solution}
+\vspace*{4.5in}
+\end{solution}
 
-\problem{2} Brief description of the concept or algorithm being tested.
+\problem{2}
+Analyze the expected running time of randomized quicksort.
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+  \item Prove the expected running time is $O(n^c)$ for some constant $c < 2$.
+  \vspace*{2.1in}
 
-\problem{3} Concise outline of the expected deliverable.
+  \item Prove the expected running time is $O(n \log n)$.
+  \vspace*{2.1in}
+\end{enumerate}
+\end{solution}
+
+\problem{3}
+Let $H$ be a directed version of the $n \times n$ grid graph described in the prompt.
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+  \item Under the special local edge-direction pattern assumption, design an $O(\log n)$ algorithm that finds one vertex with out-degree $0$ or one directed cycle.
+  \vspace*{2.0in}
+
+  \item When directions are induced by distinct vertex values $f : V \to \Z$, design an $O(n)$ algorithm that finds one vertex with out-degree $0$ or one directed cycle.
+  \vspace*{2.0in}
+
+  \item Without further assumptions on edge directions, prove any such algorithm requires $\Omega(n^2)$ time.
+  \vspace*{1.5in}
+\end{enumerate}
+\end{solution}
+
+\problem{4}
+Use divide and conquer to design an $O(n \log n)$ algorithm that finds a directed Hamiltonian path in an $n$-vertex tournament graph, and prove correctness.
+\begin{solution}
+\vspace*{4.5in}
+\end{solution}
+
+\problem{5}
+How long did this assignment take? What is the difficulty score (1--5)? Did you have collaborators?
+\begin{solution}
+\textbf{Time spent:} \underline{\hspace{2.5in}}\\[1.2em]
+\textbf{Difficulty (1--5):} \underline{\hspace{1.5in}}\\[1.2em]
+\textbf{Collaborators:} \underline{\hspace{2.3in}}
+\end{solution}
 
 \end{document}

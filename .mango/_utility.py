@@ -185,13 +185,12 @@ def write_homework_main_tex(
 
     if author_fields:
         author_line = f"\\author{{{' \\\\\n'.join(author_fields)}}}"
-        if re.search(r"\\author\{.*?\}", latex, flags=re.DOTALL):
-            latex = re.sub(r"\\author\{.*?\}", author_line, latex, count=1, flags=re.DOTALL)
-        elif "\\date" in latex:
+        latex, author_replaced = _replace_latex_command(latex, "author", author_line)
+        if not author_replaced and "\\date" in latex:
             latex = latex.replace("\\date", f"{author_line}\n\\date", 1)
-        elif "\\maketitle" in latex:
+        elif not author_replaced and "\\maketitle" in latex:
             latex = latex.replace("\\maketitle", f"{author_line}\n\\maketitle", 1)
-        else:
+        elif not author_replaced:
             latex = f"{author_line}\n{latex}"
 
     tex_path = homework_dir / output_name
@@ -213,6 +212,37 @@ def _escape_latex_text(text: str) -> str:
         "^": r"\textasciicircum{}",
     }
     return "".join(replacements.get(char, char) for char in text)
+
+
+def _replace_latex_command(latex: str, command: str, replacement: str) -> tuple[str, bool]:
+    match = re.search(rf"\\{re.escape(command)}\s*\{{", latex)
+    if not match:
+        return latex, False
+
+    brace_start = latex.find("{", match.start())
+    brace_end = _find_matching_brace(latex, brace_start)
+    if brace_end is None:
+        return latex, False
+
+    return latex[:match.start()] + replacement + latex[brace_end + 1 :], True
+
+
+def _find_matching_brace(text: str, opening_brace_index: int) -> int | None:
+    depth = 0
+    index = opening_brace_index
+    while index < len(text):
+        char = text[index]
+        if char == "\\":
+            index += 2
+            continue
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+        index += 1
+    return None
 
 
 def post_json(

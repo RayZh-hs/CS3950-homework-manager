@@ -117,12 +117,15 @@ def post_fetch_homework(
     """
     pdf_files = [p for p in downloaded_files if p.suffix.lower() == ".pdf"]
     if not pdf_files:
+        print("Agent input method: skipped (no PDF attachment found)")
         return {"status": "skipped", "reason": "no-pdf"}
 
     pdf_path = pdf_files[0]
+    input_method = "pdf-inline"
 
     template = _utility.load_text(PROMPT_TEMPLATE_PATH)
     if not template.strip():
+        print("Agent input method: skipped (prompt template missing)")
         return {"status": "skipped", "reason": "missing-prompt-template"}
 
     preamble_content = _utility.load_text(PREAMBLE_PATH)
@@ -135,12 +138,19 @@ def post_fetch_homework(
     )
 
     try:
+        print(f"Agent input method: direct PDF attachment (`input_file`) from {pdf_path.name}")
         agent_text, agent_config = _utility.request_homework_agent_text(prompt, pdf_path)
     except urllib.error.HTTPError as exc:
         if not _utility.should_retry_with_assignment_pdf_text(exc):
             raise
+        input_method = "pdf-text-fallback"
+        print(
+            "Agent input method: provider rejected direct PDF attachment; "
+            "falling back to extracted PDF text"
+        )
         pdf_text = _utility.extract_assignment_pdf_text(pdf_path)
         if not pdf_text:
+            print("Agent input method: fallback failed (empty extracted PDF text)")
             return {"status": "failed", "reason": "empty-pdf-text"}
         fallback_prompt = _utility.render_homework_prompt(
             template=template,
@@ -149,8 +159,10 @@ def post_fetch_homework(
             pdf_name=pdf_path.name,
             assignment_material=_utility.format_extracted_assignment_pdf_material(pdf_text),
         )
+        print(f"Agent input method: extracted text retry for {pdf_path.name}")
         agent_text, agent_config = _utility.request_homework_agent_text(fallback_prompt)
     if not agent_text:
+        print(f"Agent input method: {input_method} returned empty agent response")
         return {"status": "failed", "reason": "empty-agent-response"}
 
     latex_body = _utility.extract_latex_code_block(agent_text)
@@ -168,6 +180,7 @@ def post_fetch_homework(
     return {
         "status": "ok",
         "agent_model": agent_config.model,
+        "agent_input_method": input_method,
         "pdf": pdf_path.name,
         "tex": tex_path.name,
     }

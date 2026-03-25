@@ -33,6 +33,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LITERALS_DIR = Path(__file__).resolve().parent / "literals"
 PROMPT_TEMPLATE_PATH = LITERALS_DIR / "prompt.md"
 PREAMBLE_PATH = LITERALS_DIR / "preamble.tex"
+EXAMPLE_TEX_PATH = LITERALS_DIR / "example.tex"
 MAIN_TEX_NAME = "main.tex"
 MAIN_PDF_NAME = "main.pdf"
 
@@ -129,10 +130,12 @@ def post_fetch_homework(
         return {"status": "skipped", "reason": "missing-prompt-template"}
 
     preamble_content = _utility.load_text(PREAMBLE_PATH)
+    example_tex_content = _utility.load_text(EXAMPLE_TEX_PATH)
     prompt = _utility.render_homework_prompt(
         template=template,
         preamble_path=PREAMBLE_PATH,
         preamble_content=preamble_content,
+        example_tex_content=example_tex_content,
         pdf_name=pdf_path.name,
         assignment_material=_utility.format_attached_assignment_pdf_material(),
     )
@@ -156,6 +159,7 @@ def post_fetch_homework(
             template=template,
             preamble_path=PREAMBLE_PATH,
             preamble_content=preamble_content,
+            example_tex_content=example_tex_content,
             pdf_name=pdf_path.name,
             assignment_material=_utility.format_extracted_assignment_pdf_material(pdf_text),
         )

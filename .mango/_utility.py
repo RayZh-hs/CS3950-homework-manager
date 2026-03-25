@@ -78,12 +78,14 @@ def render_homework_prompt(
     template: str,
     preamble_path: Path,
     preamble_content: str,
+    example_tex_content: str,
     pdf_name: str,
     assignment_material: str,
 ) -> str:
     replacements = {
         "{{ preamble_path }}": preamble_path.resolve().as_posix(),
         "{{ preamble_content }}": preamble_content,
+        "{{ example_tex_content }}": example_tex_content,
         "{{ assignment_pdf_name }}": pdf_name,
         "{{ assignment_material }}": assignment_material,
     }
